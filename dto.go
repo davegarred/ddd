@@ -4,15 +4,15 @@ import (
 	"encoding/json"
 )
 
-
 type ErrorDto struct {
 	Error            string          `json:"error"`
 	ValidationErrors *[]ErrorDetails `json:"validation_errors,omitempty"`
 }
 
 type ErrorDetails struct {
-	Property string `json:"property"`
-	Details  string `json:"details"`
+	Field   string `json:"field"`
+	Tag     string `json:"tag"`
+	Message string `json:"message"`
 }
 
 func cleanlySerialize(dto interface{}) string {
