@@ -4,7 +4,6 @@ import (
 	"errors"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/onsi/gomega/types"
-	"gopkg.in/go-playground/validator.v9"
 	"reflect"
 
 	"testing"
@@ -65,7 +64,13 @@ func InvalidFunc_NoDto() error          { return nil }
 func TestBuildHandlerWrapper(t *testing.T) {
 	h := &TestHandler{}
 	commandProcessor := CommandProcessor{}
-	wrapper := commandProcessor.buildHandlerWrapper(validator.New(), reflect.ValueOf(h.SuccessfulTestMethod))
+	err := commandProcessor.ConfigureValidator(map[string]string{
+		"required":"{0} is required",
+	})
+	if err != nil {
+		panic(err)
+	}
+	wrapper := commandProcessor.buildHandlerWrapper(reflect.ValueOf(h.SuccessfulTestMethod))
 	g := NewGomegaWithT(t)
 
 	tests := []struct {
@@ -86,7 +91,7 @@ func TestBuildHandlerWrapper(t *testing.T) {
 		{
 			name:     "validation errors",
 			body:     `{"id":"id345z8w","name":"","birthdate":""}`,
-			expected: Equal(stdResponse(400, `{"error":"validation errors","validation_errors":[{"field":"Name","tag":"required","message":"Name is a required field"},{"field":"Birthdate","tag":"required","message":"Birthdate is a required field"}]}`)),
+			expected: Equal(stdResponse(400, `{"error":"validation errors","validation_errors":[{"field":"Name","tag":"required","message":"Name is required"},{"field":"Birthdate","tag":"required","message":"Birthdate is required"}]}`)),
 		},
 	}
 	for _, test := range tests {
@@ -103,17 +108,6 @@ func stdResponse(status int, body string) events.APIGatewayProxyResponse {
 		Body:       body,
 	}
 }
-
-//func TestHandleBody_validationError(t *testing.T) {
-//	h := &TestHandler{}
-//
-//	err := HandleBody(h.SuccessfulTestMethod, validator.New())([]byte(`{"id":"id345z8w"}`))
-//
-//	g := NewGomegaWithT(t)
-//	errs := err.(validator.ValidationErrors)
-//	g.Expect(len(errs)).To(Equal(2))
-//	g.Expect(h.Dto).To(Equal(SampleDto{}))
-//}
 
 type TestHandler struct {
 	Dto SampleDto

@@ -36,7 +36,7 @@ func (c *DynamoClient) Load(id string, object interface{}) error {
 }
 
 func (c *DynamoClient) Save(id string, payload interface{}) error {
-	ser,err := json.Marshal(payload)
+	ser, err := json.Marshal(payload)
 	if err != nil {
 		return err
 	}
@@ -58,18 +58,18 @@ type DynamoClient struct {
 	tableName string
 }
 
-func NewDynamoClient(tableName string) *DynamoClient {
-	table, err := client("us-west-2")
+func NewDynamoClient(tableName string) (*DynamoClient, error) {
+	table, err := dynamoClient("us-west-2")
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	return &DynamoClient{
-		svc:                table,
+		svc:       table,
 		tableName: tableName,
-	}
+	}, nil
 }
 
-func client(region string) (*dynamodb.DynamoDB, error) {
+func dynamoClient(region string) (*dynamodb.DynamoDB, error) {
 	sess, err := session.NewSession(&aws.Config{
 		Region: aws.String(region),
 	})

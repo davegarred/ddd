@@ -12,14 +12,13 @@ import (
 type testDto struct {
 }
 
-func test(ctx context.Context, in events.APIGatewayProxyRequest) events.APIGatewayProxyResponse {
+func test(Request) events.APIGatewayProxyResponse {
 	return Accepted()
 }
 
 func TestHandlers(t *testing.T) {
-	comp := NewCommandProcessor(map[string]func(context.Context, events.APIGatewayProxyRequest) events.APIGatewayProxyResponse{
-		"testFunction": test,
-	})
+	comp := NewCommandProcessor()
+	comp.Register("testFunction", test)
 
 	tests := []struct {
 		Name string
@@ -31,8 +30,8 @@ func TestHandlers(t *testing.T) {
 			Name:          "testFunction",
 			LambdaContext: lambdacontext.LambdaContext{},
 			APIGatewayProxyRequest: events.APIGatewayProxyRequest{
-				PathParameters:                  map[string]string{"proxy":"testFunction"},
-				Body:                            "{}",
+				PathParameters: map[string]string{"proxy": "testFunction"},
+				Body:           "{}",
 			},
 			ExpectedResponse: 202,
 		},

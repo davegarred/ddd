@@ -20,6 +20,11 @@ func NotAuthorized() events.APIGatewayProxyResponse {
 		StatusCode: 401,
 	}
 }
+func NotFound() events.APIGatewayProxyResponse {
+	return events.APIGatewayProxyResponse{
+		StatusCode: 404,
+	}
+}
 func ErrorResponse(err error) events.APIGatewayProxyResponse {
 	return events.APIGatewayProxyResponse{
 		StatusCode: 400,
