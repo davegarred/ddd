@@ -42,11 +42,11 @@ func (p *CommandProcessor) RegisterRpc(path string, f interface{}) {
 func (p *CommandProcessor) HandleRequest(ctx context.Context, reqEvent events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	request := Request{ctx, reqEvent}
 	commandFunction := p.supportedCommands[request.RequestPath(0)]
-	response := commandFunction(request)
 	if commandFunction == nil {
 		fmt.Printf("bad route: %s\n", reqEvent.PathParameters)
 		return ErrorResponse(errors.New("unsupported route")), nil
 	}
+	response := commandFunction(request)
 	response.Headers = map[string]string{"Access-Control-Allow-Origin": "*"}
 	return response, nil
 }
