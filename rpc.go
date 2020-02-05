@@ -9,15 +9,18 @@ import (
 	"reflect"
 )
 
-func (p *CommandProcessor) wrapRpcEndpoint(handlerFunc interface{}) func(context.Context, string) events.APIGatewayProxyResponse {
+func (p *CommandProcessor) wrapRpcEndpoint(handlerFunc interface{}) (func(context.Context, string) events.APIGatewayProxyResponse, error) {
 	handler := reflect.ValueOf(handlerFunc)
-	validateHandler(handler)
-	return p.buildHandlerWrapper(handler)
+	if err := validateHandler(handler); err != nil {
+		return nil, err
+	}
+	return p.buildHandlerWrapper(handler), nil
 }
 
 func (p *CommandProcessor) buildHandlerWrapper(handler reflect.Value) func(ctx context.Context, body string) events.APIGatewayProxyResponse {
-	dtoType := handler.Type().In(0)
+	dtoType := handler.Type().In(1)
 	return func(ctx context.Context, body string) events.APIGatewayProxyResponse {
+		contextValue := reflect.ValueOf(ctx)
 		dto := reflect.New(dtoType)
 		if err := json.Unmarshal([]byte(body), dto.Interface()); err != nil {
 			return ErrorResponse(err)
@@ -39,7 +42,6 @@ func (p *CommandProcessor) buildHandlerWrapper(handler reflect.Value) func(ctx c
 				return ValidationErrorResponse(&errors)
 			}
 		}
-		contextValue := reflect.ValueOf(ctx)
 		inputValues := []reflect.Value{contextValue, dto.Elem()}
 		outputValues := handler.Call(inputValues)
 		result := outputValues[0].Interface()
@@ -58,6 +60,14 @@ func validateHandler(handler reflect.Value) error {
 	handlerHasCorrectParameters := handlerType.NumIn() == 2 && handlerType.NumOut() == 1
 	if !handlerHasCorrectParameters {
 		return errors.New("handler function interface is incorrect")
+	}
+	contextType := handler.Type().In(0)
+	if _, ok := reflect.New(contextType).Interface().(*context.Context); !ok {
+		return errors.New("handler function interface is incorrect - first argument must be of type context.Context")
+	}
+	returnType := handler.Type().Out(0)
+	if _, ok := reflect.New(returnType).Interface().(*events.APIGatewayProxyResponse); !ok {
+		return errors.New("handler function interface is incorrect - return argument must be of type events.APIGatewayProxyResponse")
 	}
 	return nil
 }

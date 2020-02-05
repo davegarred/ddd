@@ -20,48 +20,6 @@ var (
 	}
 )
 
-func TestValidateHandler(t *testing.T) {
-	h := &TestHandler{}
-	g := NewGomegaWithT(t)
-
-	tests := []struct {
-		name     string
-		method   interface{}
-		expected types.GomegaMatcher
-	}{
-		{
-			name:     "success",
-			method:   h.SuccessfulTestMethod,
-			expected: BeNil(),
-		},
-		{
-			name:     "invalid - no error",
-			method:   InvalidFunc_NoDto,
-			expected: Equal(errors.New("handler function interface is incorrect")),
-		},
-		{
-			name:     "invalid - not dto processor",
-			method:   InvalidFunc_NoError,
-			expected: Equal(errors.New("handler function interface is incorrect")),
-		},
-		{
-			name:     "invalid - not a function",
-			method:   SampleDto{},
-			expected: Equal(errors.New("handler function interface is incorrect")),
-		},
-	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			handler := reflect.ValueOf(test.method)
-			err := validateHandler(handler)
-			g.Expect(err).To(test.expected)
-		})
-	}
-}
-
-func InvalidFunc_NoError(dto SampleDto) {}
-func InvalidFunc_NoDto() error          { return nil }
-
 func TestBuildHandlerWrapper(t *testing.T) {
 	h := &TestHandler{}
 	commandProcessor := CommandProcessor{}
@@ -114,7 +72,7 @@ type TestHandler struct {
 	Dto SampleDto
 }
 
-func (h *TestHandler) SuccessfulTestMethod(dto SampleDto) error {
+func (h *TestHandler) SuccessfulTestMethod(ctx context.Context, dto SampleDto) error {
 	h.Dto = dto
 	return nil
 }

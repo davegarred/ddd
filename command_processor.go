@@ -32,11 +32,15 @@ func (p *CommandProcessor) Register(path string, f func(context.Context, Request
 	p.supportedCommands[path] = f
 }
 
-func (p *CommandProcessor) RegisterRpc(path string, f interface{}) {
-	wrapper := p.wrapRpcEndpoint(f)
+func (p *CommandProcessor) RegisterRpc(path string, f interface{}) error {
+	wrapper, err := p.wrapRpcEndpoint(f)
+	if err != nil {
+		return err
+	}
 	p.supportedCommands[path] = func(ctx context.Context, req Request) events.APIGatewayProxyResponse {
 		return wrapper(ctx, req.Body)
 	}
+	return nil
 }
 
 func (p *CommandProcessor) HandleRequest(ctx context.Context, reqEvent events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
