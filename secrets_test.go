@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func TestGetSecret(t *testing.T) {
+func _TestGetSecret(t *testing.T) {
 	secrets,err := GetSecret("stc-admin-promary")
 	if err != nil {
 		panic(err)

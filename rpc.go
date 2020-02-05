@@ -1,6 +1,7 @@
 package ddd
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"github.com/aws/aws-lambda-go/events"
@@ -8,15 +9,15 @@ import (
 	"reflect"
 )
 
-func (p *CommandProcessor) wrapRpcEndpoint(handlerFunc interface{}) func(string) events.APIGatewayProxyResponse {
+func (p *CommandProcessor) wrapRpcEndpoint(handlerFunc interface{}) func(context.Context, string) events.APIGatewayProxyResponse {
 	handler := reflect.ValueOf(handlerFunc)
 	validateHandler(handler)
 	return p.buildHandlerWrapper(handler)
 }
 
-func (p *CommandProcessor) buildHandlerWrapper(handler reflect.Value) func(body string) events.APIGatewayProxyResponse {
+func (p *CommandProcessor) buildHandlerWrapper(handler reflect.Value) func(ctx context.Context, body string) events.APIGatewayProxyResponse {
 	dtoType := handler.Type().In(0)
-	return func(body string) events.APIGatewayProxyResponse {
+	return func(ctx context.Context, body string) events.APIGatewayProxyResponse {
 		dto := reflect.New(dtoType)
 		if err := json.Unmarshal([]byte(body), dto.Interface()); err != nil {
 			return ErrorResponse(err)
@@ -38,8 +39,8 @@ func (p *CommandProcessor) buildHandlerWrapper(handler reflect.Value) func(body 
 				return ValidationErrorResponse(&errors)
 			}
 		}
-
-		inputValues := []reflect.Value{dto.Elem()}
+		contextValue := reflect.ValueOf(ctx)
+		inputValues := []reflect.Value{contextValue, dto.Elem()}
 		outputValues := handler.Call(inputValues)
 		result := outputValues[0].Interface()
 		if result == nil {
@@ -54,7 +55,7 @@ func validateHandler(handler reflect.Value) error {
 	if handler.Kind() != reflect.Func {
 		return errors.New("handler function interface is incorrect")
 	}
-	handlerHasCorrectParameters := handlerType.NumIn() == 1 && handlerType.NumOut() == 1
+	handlerHasCorrectParameters := handlerType.NumIn() == 2 && handlerType.NumOut() == 1
 	if !handlerHasCorrectParameters {
 		return errors.New("handler function interface is incorrect")
 	}

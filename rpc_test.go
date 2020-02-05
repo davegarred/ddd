@@ -1,6 +1,7 @@
 package ddd
 
 import (
+	"context"
 	"errors"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/onsi/gomega/types"
@@ -96,7 +97,7 @@ func TestBuildHandlerWrapper(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			result := wrapper(test.body)
+			result := wrapper(context.Background(), test.body)
 			g.Expect(result).To(test.expected)
 		})
 	}

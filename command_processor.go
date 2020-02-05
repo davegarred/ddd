@@ -10,32 +10,32 @@ import (
 )
 
 type CommandProcessor struct {
-	supportedCommands map[string]func(Request) events.APIGatewayProxyResponse
+	supportedCommands map[string]func(context.Context,Request) events.APIGatewayProxyResponse
 	*validator.Validate
 	ut.Translator
 }
 
 func NewCommandProcessor() *CommandProcessor {
 	processor := &CommandProcessor{
-		supportedCommands: make(map[string]func(request Request) events.APIGatewayProxyResponse),
+		supportedCommands: make(map[string]func(context.Context,Request) events.APIGatewayProxyResponse),
 		Validate:          nil,
 		Translator:        nil,
 	}
 	return processor
 }
 
-func (p *CommandProcessor) RegisterAll(supportedCommands map[string]func(Request) events.APIGatewayProxyResponse) {
+func (p *CommandProcessor) RegisterAll(supportedCommands map[string]func(context.Context, Request) events.APIGatewayProxyResponse) {
 	p.supportedCommands = supportedCommands
 }
 
-func (p *CommandProcessor) Register(path string, f func(Request) events.APIGatewayProxyResponse) {
+func (p *CommandProcessor) Register(path string, f func(context.Context, Request) events.APIGatewayProxyResponse) {
 	p.supportedCommands[path] = f
 }
 
 func (p *CommandProcessor) RegisterRpc(path string, f interface{}) {
 	wrapper := p.wrapRpcEndpoint(f)
-	p.supportedCommands[path] = func(req Request) events.APIGatewayProxyResponse {
-		return wrapper(req.Body)
+	p.supportedCommands[path] = func(ctx context.Context, req Request) events.APIGatewayProxyResponse {
+		return wrapper(ctx, req.Body)
 	}
 }
 
@@ -46,7 +46,7 @@ func (p *CommandProcessor) HandleRequest(ctx context.Context, reqEvent events.AP
 		fmt.Printf("bad route: %s\n", reqEvent.PathParameters)
 		return ErrorResponse(errors.New("unsupported route")), nil
 	}
-	response := commandFunction(request)
+	response := commandFunction(ctx, request)
 	response.Headers = map[string]string{"Access-Control-Allow-Origin": "*"}
 	return response, nil
 }
