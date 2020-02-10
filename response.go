@@ -37,3 +37,9 @@ func ValidationErrorResponse(err *[]ErrorDetails) events.APIGatewayProxyResponse
 		Body:       cleanlySerialize(ErrorDto{"validation errors", err}),
 	}
 }
+func ServerErrorResponse(err error) events.APIGatewayProxyResponse {
+	return events.APIGatewayProxyResponse{
+		StatusCode: 500,
+		Body:       cleanlySerialize(ErrorDto{err.Error(), nil}),
+	}
+}

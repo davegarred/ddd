@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/aws/aws-lambda-go/events"
@@ -14,7 +15,7 @@ func main() {
 	lambda.Start(processor.HandleRequest)
 }
 
-func Handler(req ddd.Request) events.APIGatewayProxyResponse {
+func Handler(_ context.Context, req ddd.Request) events.APIGatewayProxyResponse {
 	if ser, err := json.Marshal(req); err != nil {
 		fmt.Println(string(ser))
 	}
